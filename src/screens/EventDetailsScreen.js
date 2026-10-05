@@ -11,7 +11,7 @@ import { formatFullEventDate } from '../utils/date';
 import { colors } from '../theme/theme';
 
 export default function EventDetailsScreen({ navigation, route }) {
-  const { events, savedEventIds, toggleSaved } = useAppContext();
+  const { savedEventIds, toggleSaved } = useAppContext();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [registered, setRegistered] = useState(false);
@@ -20,9 +20,7 @@ export default function EventDetailsScreen({ navigation, route }) {
 
   useEffect(() => {
     async function loadEvent() {
-      const selected = route.params?.eventIndex !== undefined
-        ? events[route.params.eventIndex]
-        : await getEvent(route.params?.eventId);
+      const selected = await getEvent(route.params?.eventId);
       setEvent(selected);
       if (selected) {
         setRegistered(await isRegistered(selected.id));
@@ -30,7 +28,7 @@ export default function EventDetailsScreen({ navigation, route }) {
       setLoading(false);
     }
     loadEvent();
-  }, [route.params?.eventId, route.params?.eventIndex]);
+  }, [route.params?.eventId]);
 
   async function handleSave() {
     try {
@@ -113,7 +111,7 @@ export default function EventDetailsScreen({ navigation, route }) {
         <Text style={styles.sectionTitle}>About this event</Text>
         <Text style={styles.description}>{event.description}</Text>
         <View style={styles.tags}>
-          {event.tags.map((tag) => (
+          {(event.tags || []).map((tag) => (
             <Chip
               buttonStyle={styles.tag}
               key={tag}

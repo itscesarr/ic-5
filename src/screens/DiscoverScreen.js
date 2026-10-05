@@ -27,14 +27,18 @@ export default function DiscoverScreen({ navigation }) {
   const [refreshError, setRefreshError] = useState('');
 
   const filteredEvents = useMemo(() => {
-    events.sort((left, right) => new Date(left.startsAt) - new Date(right.startsAt));
+    const search = query.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     return events.filter((event) => {
-      const matchesSearch = !query || event.title.includes(query);
+      const searchableText = [
+        event.title, event.description, event.category, event.location, event.room,
+        ...(event.tags || []),
+      ].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const matchesSearch = !search || searchableText.includes(search);
       const matchesCategory =
         selectedCategory === 'All' || event.category === selectedCategory;
       return matchesSearch && matchesCategory;
-    });
-  }, [events, query]);
+    }).sort((left, right) => new Date(left.startsAt) - new Date(right.startsAt));
+  }, [events, query, selectedCategory]);
 
   async function handleRefresh() {
     setRefreshing(true);
@@ -109,13 +113,13 @@ export default function DiscoverScreen({ navigation }) {
           />
         }
         refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={refreshing} />}
-        renderItem={({ item, index }) => (
+        renderItem={({ item }) => (
           <EventCard
             event={item}
             saved={savedEventIds.includes(item.id)}
             onPress={() =>
               navigation.navigate('EventDetails', {
-                eventIndex: index,
+                eventId: item.id,
                 source: 'Discover',
               })
             }
