@@ -38,6 +38,8 @@ function screenHarness(file, context, database = {}) {
       if (name === 'react') return react;
       if (name.includes('AppContext')) return { useAppContext: () => context };
       if (name.includes('database')) return database;
+      if (name.includes('utils/date')) return { formatFullEventDate: () => 'Event date' };
+      if (name === '@rneui/themed') return { Text: 'Text', Button: 'Button', Chip: 'Chip' };
       if (name.includes('theme')) return { colors: {} };
       if (name === 'react-native') return {
         FlatList: 'FlatList', TextInput: 'TextInput', Pressable: 'Pressable',
@@ -105,4 +107,40 @@ test('details loads the requested event ID independently of list position', asyn
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(requested, 'late');
   assert.equal(registrationId, 'late');
+});
+
+test('Mixer details render without tags', async () => {
+  const event = { ...events[1], id: 'evt-006', title: 'Graduate Student Mixer' };
+  const harness = screenHarness('src/screens/EventDetailsScreen.js', { savedEventIds: [] }, {
+    getEvent: async () => event,
+    isRegistered: async () => false,
+  });
+  const props = { navigation: {}, route: { params: { eventId: event.id } } };
+  harness.render(props);
+  harness.effects[0]();
+  await new Promise((resolve) => setImmediate(resolve));
+  const tree = harness.render(props);
+  assert.ok(find(tree, (node) => node.type === 'Text' && node.props.children[0] === event.title));
+  assert.equal(find(tree, (node) => node.type === 'Chip'), undefined);
+});
+
+test('failed details reads leave loading and show a working back button', async () => {
+  for (const failsRegistration of [false, true]) {
+    let wentBack = false;
+    const harness = screenHarness('src/screens/EventDetailsScreen.js', { savedEventIds: [] }, {
+      getEvent: async () => {
+        if (!failsRegistration) throw new Error('Database unavailable');
+        return events[0];
+      },
+      isRegistered: async () => { throw new Error('Registration query failed'); },
+    });
+    const props = { navigation: { goBack: () => { wentBack = true; } }, route: { params: { eventId: 'late' } } };
+    harness.render(props);
+    harness.effects[0]();
+    await new Promise((resolve) => setImmediate(resolve));
+    const tree = harness.render(props);
+    assert.ok(find(tree, (node) => node.type === 'Text' && node.props.children[0].startsWith('Unable to open event')));
+    find(tree, (node) => node.type === 'Button').props.onPress();
+    assert.equal(wentBack, true);
+  }
 });

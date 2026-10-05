@@ -86,9 +86,18 @@ export async function initializeDatabase() {
 }
 
 function mapEvent(row) {
+  let tags = [];
+  try {
+    const parsed = row.tags ? JSON.parse(row.tags) : [];
+    if (Array.isArray(parsed)) {
+      tags = parsed.filter((tag) => typeof tag === 'string');
+    }
+  } catch {
+    // Older rows may contain invalid JSON; optional tags must not prevent loading.
+  }
   return {
     ...row,
-    tags: row.tags ? JSON.parse(row.tags) : undefined,
+    tags,
   };
 }
 

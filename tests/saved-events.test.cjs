@@ -63,3 +63,25 @@ test('a failed write does not block later saves or unsaves', async () => {
   assert.equal(await toggleSavedEvent('event-1'), false);
   assert.equal(db.saved.size, 0);
 });
+
+test('event reads tolerate missing, malformed, and non-array stored tags', async () => {
+  for (const tags of [null, undefined, '', 'null', '{}', '"social"', 'invalid JSON']) {
+    const row = { id: 'evt-006', title: 'Graduate Student Mixer', tags };
+    const database = loadDatabase({
+      getFirstAsync: async () => row,
+      getAllAsync: async () => [row],
+    });
+    const event = await database.getEvent('evt-006');
+    assert.equal(event.title, row.title);
+    assert.deepEqual(Array.from(event.tags), []);
+    assert.equal((await database.getEvents()).length, 1);
+    assert.equal((await database.getSavedEvents()).length, 1);
+  }
+});
+
+test('event reads preserve valid tags and discard non-text entries', async () => {
+  const database = loadDatabase({
+    getFirstAsync: async () => ({ id: 'evt-001', tags: '["film",null,42,"late night"]' }),
+  });
+  assert.deepEqual(Array.from((await database.getEvent('evt-001')).tags), ['film', 'late night']);
+});

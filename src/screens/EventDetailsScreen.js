@@ -14,20 +14,31 @@ export default function EventDetailsScreen({ navigation, route }) {
   const { savedEventIds, toggleSaved } = useAppContext();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [registered, setRegistered] = useState(false);
   const [registering, setRegistering] = useState(false);
   const saved = event ? savedEventIds.includes(event.id) : false;
 
   useEffect(() => {
+    let active = true;
     async function loadEvent() {
-      const selected = await getEvent(route.params?.eventId);
-      setEvent(selected);
-      if (selected) {
-        setRegistered(await isRegistered(selected.id));
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const selected = await getEvent(route.params?.eventId);
+        const selectedRegistered = selected ? await isRegistered(selected.id) : false;
+        if (active) {
+          setEvent(selected);
+          setRegistered(selectedRegistered);
+        }
+      } catch {
+        if (active) setLoadError('Unable to open event. Please go back and try again.');
+      } finally {
+        if (active) setLoading(false);
       }
-      setLoading(false);
     }
     loadEvent();
+    return () => { active = false; };
   }, [route.params?.eventId]);
 
   async function handleSave() {
@@ -56,10 +67,10 @@ export default function EventDetailsScreen({ navigation, route }) {
     return <LoadingOverlay label="Opening event..." />;
   }
 
-  if (!event) {
+  if (loadError || !event) {
     return (
       <SafeAreaView style={styles.center}>
-        <Text h4>Event not found</Text>
+        <Text h4>{loadError || 'Event not found'}</Text>
         <Button onPress={() => navigation.goBack()} title="Go back" type="clear" />
       </SafeAreaView>
     );
