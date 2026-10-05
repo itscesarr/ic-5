@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Card, Text } from '@rneui/themed';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatEventDate, formatEventTime } from '../utils/date';
 import { colors } from '../theme/theme';
 
-export default function EventCard({ event, initiallySaved, onPress, onToggleSaved }) {
-  const [saved, setSaved] = useState(initiallySaved);
+export default function EventCard({ event, saved, onPress, onToggleSaved }) {
 
-  async function handleSavedPress() {
-    setSaved((current) => !current);
-    const next = await onToggleSaved(event.id);
-    setSaved(next);
+  async function handleSavedPress(pressEvent) {
+    pressEvent.stopPropagation();
+    try {
+      await onToggleSaved(event.id);
+    } catch (error) {
+      Alert.alert('Unable to update saved event', error.message);
+    }
   }
 
   return (
@@ -19,7 +21,14 @@ export default function EventCard({ event, initiallySaved, onPress, onToggleSave
       <Card containerStyle={styles.card}>
         <View style={styles.topRow}>
           <Text style={styles.category}>{event.category.toUpperCase()}</Text>
-          <Pressable hitSlop={4} onPress={handleSavedPress} style={styles.heartButton}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={saved ? 'Unsave event' : 'Save event'}
+            accessibilityState={{ selected: saved }}
+            hitSlop={4}
+            onPress={handleSavedPress}
+            style={styles.heartButton}
+          >
             <MaterialCommunityIcons
               color={saved ? '#C6253D' : colors.muted}
               name={saved ? 'heart' : 'heart-outline'}

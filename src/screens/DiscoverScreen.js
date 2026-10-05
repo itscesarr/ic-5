@@ -99,7 +99,7 @@ export default function DiscoverScreen({ navigation }) {
         contentContainerStyle={filteredEvents.length ? styles.list : styles.emptyList}
         data={filteredEvents}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
-        keyExtractor={(_, index) => String(index)}
+        keyExtractor={(item) => item.id}
         ListEmptyComponent={
           <EmptyState
             actionLabel="Clear filters"
@@ -112,7 +112,7 @@ export default function DiscoverScreen({ navigation }) {
         renderItem={({ item, index }) => (
           <EventCard
             event={item}
-            initiallySaved={savedEventIds.includes(item.id)}
+            saved={savedEventIds.includes(item.id)}
             onPress={() =>
               navigation.navigate('EventDetails', {
                 eventIndex: index,

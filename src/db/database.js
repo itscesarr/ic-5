@@ -4,6 +4,7 @@ import { seedEvents } from '../data/seedEvents';
 const DATABASE_NAME = 'maizemeet.db';
 
 let databasePromise;
+let savedMutationQueue = Promise.resolve();
 
 export function getDatabase() {
   if (!databasePromise) {
@@ -58,6 +59,9 @@ export async function initializeDatabase() {
     DELETE FROM events
     WHERE rowId NOT IN (SELECT MIN(rowId) FROM events GROUP BY id);
     CREATE UNIQUE INDEX IF NOT EXISTS events_id_unique ON events (id);
+    DELETE FROM saved_events
+    WHERE rowId NOT IN (SELECT MIN(rowId) FROM saved_events GROUP BY eventId);
+    CREATE UNIQUE INDEX IF NOT EXISTS saved_events_event_id_unique ON saved_events (eventId);
   `);
 
   for (const event of seedEvents) {
@@ -128,7 +132,14 @@ export async function getSavedEventIds() {
   }
 }
 
-export async function toggleSavedEvent(eventId) {
+export function toggleSavedEvent(eventId) {
+  // Serialize the read/write pair so rapid taps cannot read the same old state.
+  const operation = savedMutationQueue.then(() => performSavedToggle(eventId));
+  savedMutationQueue = operation.catch(() => {});
+  return operation;
+}
+
+async function performSavedToggle(eventId) {
   const db = await getDatabase();
   const saved = await db.getFirstAsync(
     'SELECT rowId FROM saved_events WHERE eventId = ?',

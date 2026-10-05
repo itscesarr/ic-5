@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { getEvents, getSavedEventIds, toggleSavedEvent } from '../db/database';
 import { getPreferences } from '../storage/preferences';
 
@@ -8,28 +8,36 @@ export function AppContextProvider({ children, initialSession }) {
   const [session, setSession] = useState(initialSession);
   const [events, setEvents] = useState([]);
   const [savedEventIds, setSavedEventIds] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const savedStateQueue = useRef(Promise.resolve());
   const [preferences, setPreferences] = useState({
     darkTheme: false,
   });
 
   useEffect(() => {
-    getEvents().then(setEvents);
-    getSavedEventIds().then(setSavedEventIds);
+    getEvents().then(setEvents).finally(() => setEventsLoading(false));
+    savedStateQueue.current = getSavedEventIds().then(setSavedEventIds);
     getPreferences().then(setPreferences);
   }, []);
 
-  async function toggleSaved(eventId) {
-    const isSaved = await toggleSavedEvent(eventId);
-    setSavedEventIds((current) =>
-      isSaved ? [...current, eventId] : current.filter((id) => id !== eventId)
-    );
-    return isSaved;
+  function toggleSaved(eventId) {
+    const operation = savedStateQueue.current.then(async () => {
+      const isSaved = await toggleSavedEvent(eventId);
+      setSavedEventIds((current) => {
+        const remaining = current.filter((id) => id !== eventId);
+        return isSaved ? [...remaining, eventId] : remaining;
+      });
+      return isSaved;
+    });
+    savedStateQueue.current = operation.catch(() => {});
+    return operation;
   }
 
   const value = {
     session,
     setSession,
     events,
+    eventsLoading,
     setEvents,
     savedEventIds,
     toggleSaved,
