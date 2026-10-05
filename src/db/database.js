@@ -27,7 +27,7 @@ export async function initializeDatabase() {
     PRAGMA journal_mode = WAL;
     CREATE TABLE IF NOT EXISTS events (
       rowId INTEGER PRIMARY KEY AUTOINCREMENT,
-      id TEXT NOT NULL,
+      id TEXT NOT NULL UNIQUE,
       title TEXT NOT NULL,
       description TEXT NOT NULL,
       startsAt TEXT NOT NULL,
@@ -53,13 +53,19 @@ export async function initializeDatabase() {
       eventId TEXT NOT NULL,
       createdAt TEXT NOT NULL
     );
+    -- Keep the original event row, including its current registration count.
+    -- Related tables reference event IDs, so their data survives this cleanup.
+    DELETE FROM events
+    WHERE rowId NOT IN (SELECT MIN(rowId) FROM events GROUP BY id);
+    CREATE UNIQUE INDEX IF NOT EXISTS events_id_unique ON events (id);
   `);
 
   for (const event of seedEvents) {
     await db.runAsync(
       `INSERT INTO events
         (id, title, description, startsAt, endsAt, category, location, room, capacity, registeredCount, tags)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO NOTHING`,
       event.id,
       event.title,
       event.description,
