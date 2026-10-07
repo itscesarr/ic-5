@@ -43,7 +43,7 @@ export default function SettingsScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             await resetPreferences();
-            setPreferences({ darkTheme: false });
+            setPreferences({ darkTheme: false, cardLayout: 'list' });
             setMessage('App data reset.');
           },
         },

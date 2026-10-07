@@ -1,5 +1,9 @@
+// Campus events always display in Ann Arbor's timezone, regardless of device settings.
+const EVENT_TIME_ZONE = 'America/Detroit';
+
 export function formatEventDate(startsAt) {
   return new Intl.DateTimeFormat(undefined, {
+    timeZone: EVENT_TIME_ZONE,
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -8,6 +12,7 @@ export function formatEventDate(startsAt) {
 
 export function formatEventTime(startsAt, endsAt) {
   const formatter = new Intl.DateTimeFormat(undefined, {
+    timeZone: EVENT_TIME_ZONE,
     hour: 'numeric',
     minute: '2-digit',
   });

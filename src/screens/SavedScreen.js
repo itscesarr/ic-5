@@ -3,13 +3,17 @@ import { FlatList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@rneui/themed';
 import EventCard from '../components/EventCard';
+import CardLayoutToggle from '../components/CardLayoutToggle';
+import { useCardLayout } from '../utils/cardLayout';
 import EmptyState from '../components/EmptyState';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { useAppContext } from '../context/AppContext';
 import { colors } from '../theme/theme';
 
 export default function SavedScreen({ navigation }) {
-  const { events, eventsLoading, savedEventIds, toggleSaved } = useAppContext();
+  const { events, eventsLoading, savedEventIds, toggleSaved, preferences } = useAppContext();
+  const layout = preferences?.cardLayout || 'list';
+  const { columns, cardWidth } = useCardLayout(layout);
   const displayedEvents = events.filter((event) => savedEventIds.includes(event.id)).sort(
     (left, right) => new Date(left.startsAt) - new Date(right.startsAt)
   );
@@ -24,7 +28,11 @@ export default function SavedScreen({ navigation }) {
         <Text h2 h2Style={styles.heading}>Saved events</Text>
         <Text style={styles.subheading}>Keep the good ones close.</Text>
       </View>
+      <CardLayoutToggle />
       <FlatList
+        key={`${layout}-${columns}`}
+        numColumns={columns}
+        columnWrapperStyle={columns > 1 ? styles.gridRow : undefined}
         contentContainerStyle={displayedEvents.length ? styles.list : styles.emptyList}
         data={displayedEvents}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -38,6 +46,8 @@ export default function SavedScreen({ navigation }) {
         renderItem={({ item }) => (
           <EventCard
             event={item}
+            compact={layout === 'grid'}
+            cardWidth={cardWidth}
             saved={savedEventIds.includes(item.id)}
             onPress={() => navigation.navigate('EventDetails', { eventId: item.id })}
             onToggleSaved={toggleSaved}
@@ -56,4 +66,5 @@ const styles = StyleSheet.create({
   list: { paddingBottom: 28, paddingHorizontal: 20, paddingTop: 18 },
   emptyList: { flexGrow: 1 },
   separator: { height: 12 },
+  gridRow: { gap: 12, alignItems: 'stretch' },
 });

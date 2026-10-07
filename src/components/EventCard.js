@@ -5,7 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatEventDate, formatEventTime } from '../utils/date';
 import { colors } from '../theme/theme';
 
-export default function EventCard({ event, saved, onPress, onToggleSaved }) {
+export default function EventCard({ event, saved, onPress, onToggleSaved, compact = false, cardWidth }) {
 
   async function handleSavedPress(pressEvent) {
     pressEvent.stopPropagation();
@@ -17,15 +17,29 @@ export default function EventCard({ event, saved, onPress, onToggleSaved }) {
   }
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
-      <Card containerStyle={styles.card}>
-        <View style={styles.topRow}>
-          <Text style={styles.category}>{event.category.toUpperCase()}</Text>
+    <View style={cardWidth ? { width: cardWidth } : undefined}>
+      <Card containerStyle={[styles.card, compact && styles.compactCard, compact && { minHeight: cardWidth }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${event.title}. ${formatEventDate(event.startsAt)}. ${formatEventTime(event.startsAt, event.endsAt)}. ${event.location}`}
+          accessibilityHint="Opens event details"
+          onPress={onPress}
+          style={({ pressed }) => [styles.content, compact && styles.compactContent, pressed && styles.pressed]}
+        >
+        <View style={[styles.topRow, compact && styles.compactTopRow]}>
+          <Text style={[styles.category, compact && styles.compactCategory]}>{event.category.toUpperCase()}</Text>
+        </View>
+        <Text style={[styles.title, compact && styles.compactTitle]}>
+          {event.title}
+        </Text>
+        <Text style={styles.date}>{formatEventDate(event.startsAt)}</Text>
+        <Text style={styles.meta}>{formatEventTime(event.startsAt, event.endsAt)}</Text>
+        <Text style={styles.meta}>{event.location}</Text>
+        </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={saved ? 'Unsave event' : 'Save event'}
+            accessibilityLabel={`${saved ? 'Unsave' : 'Save'} ${event.title}`}
             accessibilityState={{ selected: saved }}
-            hitSlop={4}
             onPress={handleSavedPress}
             style={styles.heartButton}
           >
@@ -35,16 +49,8 @@ export default function EventCard({ event, saved, onPress, onToggleSaved }) {
               size={22}
             />
           </Pressable>
-        </View>
-        <Text h4 h4Style={styles.title} numberOfLines={1}>
-          {event.title}
-        </Text>
-        <Text style={styles.date}>{formatEventDate(event.startsAt)}</Text>
-        <Text numberOfLines={1} style={styles.meta}>
-          {formatEventTime(event.startsAt, event.endsAt)} · {event.location}
-        </Text>
       </Card>
-    </Pressable>
+    </View>
   );
 }
 
@@ -52,16 +58,23 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
     elevation: 1,
-    height: 174,
-    padding: 18,
+    minHeight: 174,
+    padding: 0,
+    flex: 1,
     shadowColor: '#102B44',
     shadowOpacity: 0.08,
     shadowRadius: 12,
   },
+  compactCard: { borderRadius: 12 },
+  compactContent: { padding: 12 },
+  compactTopRow: { paddingRight: 40 },
+  compactCategory: { letterSpacing: 0.3 },
+  content: { padding: 16, paddingTop: 16, flex: 1, minHeight: 48 },
+  compactTitle: { fontSize: 16 },
   pressed: { opacity: 0.78 },
-  topRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  topRow: { paddingRight: 36, minHeight: 32, alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   category: { color: colors.blueLight, fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
-  heartButton: { alignItems: 'center', height: 28, justifyContent: 'center', width: 28 },
+  heartButton: { position: 'absolute', top: 4, right: 4, alignItems: 'center', height: 48, justifyContent: 'center', width: 48 },
   title: { color: colors.ink, fontSize: 20, fontWeight: '800', marginTop: 2 },
   date: { color: colors.blue, fontSize: 14, fontWeight: '700', marginTop: 8 },
   meta: { color: colors.muted, fontSize: 13, marginTop: 3 },

@@ -38,11 +38,13 @@ function screenHarness(file, context, database = {}) {
       if (name === 'react') return react;
       if (name.includes('AppContext')) return { useAppContext: () => context };
       if (name.includes('database')) return database;
+      if (name.includes('eventService')) return database;
+      if (name.includes('utils/cardLayout')) return { useCardLayout: () => ({ columns: 1, cardWidth: 350 }) };
       if (name.includes('utils/date')) return { formatFullEventDate: () => 'Event date' };
       if (name === '@rneui/themed') return { Text: 'Text', Button: 'Button', Chip: 'Chip' };
       if (name.includes('theme')) return { colors: {} };
       if (name === 'react-native') return {
-        FlatList: 'FlatList', TextInput: 'TextInput', Pressable: 'Pressable',
+        FlatList: 'FlatList', TextInput: 'TextInput', Pressable: 'Pressable', RefreshControl: 'RefreshControl',
         View: 'View', StyleSheet: { create: (styles) => styles },
       };
       return {};
@@ -143,4 +145,58 @@ test('failed details reads leave loading and show a working back button', async 
     find(tree, (node) => node.type === 'Button').props.onPress();
     assert.equal(wentBack, true);
   }
+});
+
+test('Discover distinguishes loading, no listed events, and no filter matches', () => {
+  const context = { events: [], savedEventIds: [], eventsLoading: true };
+  const harness = screenHarness('src/screens/DiscoverScreen.js', context);
+  const list = () => find(harness.render({ navigation: {} }), (node) => node.type === 'FlatList');
+  assert.equal(list().props.ListEmptyComponent.props.label, 'Loading events...');
+  context.eventsLoading = false;
+  assert.equal(list().props.ListEmptyComponent.props.title, 'No events listed yet');
+  assert.equal(list().props.ListEmptyComponent.props.actionLabel, 'Refresh events');
+  context.events = events;
+  find(harness.render({ navigation: {} }), (node) => node.type === 'TextInput').props.onChangeText('no such event');
+  assert.equal(list().props.ListEmptyComponent.props.title, 'No matching events');
+  list().props.ListEmptyComponent.props.onAction();
+  assert.equal(list().props.data.length, events.length);
+});
+
+test('Discover offers a retry for initial loading errors', async () => {
+  let retries = 0;
+  const harness = screenHarness('src/screens/DiscoverScreen.js', {
+    events: [], savedEventIds: [], eventsError: 'Unable to load events.',
+    reloadEvents: async () => { retries++; },
+  });
+  const empty = find(harness.render({ navigation: {} }), (node) => node.type === 'FlatList').props.ListEmptyComponent;
+  assert.equal(empty.props.title, 'Unable to load events');
+  assert.equal(empty.props.actionLabel, 'Try again');
+  await empty.props.onAction();
+  assert.equal(retries, 1);
+});
+
+test('failed refresh preserves events, stops refreshing, and can recover', async () => {
+  let shouldFail = true;
+  const context = {
+    events, savedEventIds: [],
+    setEvents: (next) => { context.events = next; },
+    setEventsError: () => {},
+  };
+  const harness = screenHarness('src/screens/DiscoverScreen.js', context, {
+    refreshEvents: async () => {
+      if (shouldFail) throw new Error('Service unavailable');
+      return [events[0]];
+    },
+  });
+  const list = () => find(harness.render({ navigation: {} }), (node) => node.type === 'FlatList');
+  await list().props.refreshControl.props.onRefresh();
+  assert.equal(context.events, events);
+  assert.equal(list().props.refreshControl.props.refreshing, false);
+  const retry = find(harness.render({ navigation: {} }), (node) => node.type === 'Pressable' && node.props.children[0]?.props.children[0] === 'Try again');
+  assert.ok(retry);
+  shouldFail = false;
+  await retry.props.onPress();
+  assert.equal(list().props.data.length, 1);
+  assert.equal(list().props.refreshControl.props.refreshing, false);
+  assert.equal(find(harness.render({ navigation: {} }), (node) => node.props.accessibilityRole === 'alert'), undefined);
 });
