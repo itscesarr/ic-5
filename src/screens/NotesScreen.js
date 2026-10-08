@@ -12,6 +12,7 @@ export default function NotesScreen({ navigation, route }) {
   const { eventId, eventTitle } = route.params;
   const [note, setNote] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const timer = useRef(null);
 
   useEffect(() => {
@@ -24,7 +25,8 @@ export default function NotesScreen({ navigation, route }) {
     if (!loaded) return;
     timer.current = setTimeout(() => {
       saveNote(eventId, note)
-        .catch(() => {});
+        .then(() => setSaveError(''))
+        .catch(() => setSaveError('Could not save your note. Edit it to try again.'));
     }, 700);
     return () => clearTimeout(timer.current);
   }, [note]);
@@ -46,6 +48,7 @@ export default function NotesScreen({ navigation, route }) {
           <Text style={styles.eyebrow}>NOTE FOR</Text>
           <Text h3 h3Style={styles.eventTitle}>{eventTitle}</Text>
           <Text style={styles.helper}>Only you can see this note.</Text>
+          {saveError ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{saveError}</Text> : null}
 
           <TextInput
             multiline
@@ -72,5 +75,6 @@ const createStyles = (colors) => StyleSheet.create({
   eyebrow: { color: colors.blueLight, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
   eventTitle: { color: colors.primary, fontSize: 25, fontWeight: '900', lineHeight: 30, marginTop: 6 },
   helper: { color: colors.muted, marginTop: 8 },
+  error: { color: colors.danger, marginTop: 8 },
   input: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 14, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, lineHeight: 24, marginTop: 22, maxHeight: 330, minHeight: 180, padding: 16 },
 });

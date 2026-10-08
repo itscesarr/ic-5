@@ -64,6 +64,10 @@ export async function initializeDatabase() {
     CREATE UNIQUE INDEX IF NOT EXISTS saved_events_event_id_unique ON saved_events (eventId);
   `);
 
+  await seedDatabase(db);
+}
+
+async function seedDatabase(db) {
   for (const event of seedEvents) {
     await db.runAsync(
       `INSERT INTO events
@@ -83,6 +87,20 @@ export async function initializeDatabase() {
       event.tags ? JSON.stringify(event.tags) : null
     );
   }
+}
+
+export async function resetDatabase() {
+  await savedMutationQueue;
+  const db = await getDatabase();
+  await db.withTransactionAsync(async () => {
+    await db.execAsync(`
+      DELETE FROM saved_events;
+      DELETE FROM notes;
+      DELETE FROM registrations;
+      DELETE FROM events;
+    `);
+    await seedDatabase(db);
+  });
 }
 
 function mapEvent(row) {
@@ -172,8 +190,11 @@ export async function getNote(eventId) {
 export async function saveNote(eventId, body) {
   const db = await getDatabase();
   const updatedAt = new Date().toISOString();
-  await db.execAsync(
-    `INSERT OR REPLACE INTO notes (eventId, body, updatedAt) VALUES ('${eventId}', '${body}', '${updatedAt}')`
+  await db.runAsync(
+    'INSERT OR REPLACE INTO notes (eventId, body, updatedAt) VALUES (?, ?, ?)',
+    eventId,
+    body,
+    updatedAt
   );
   return updatedAt;
 }
