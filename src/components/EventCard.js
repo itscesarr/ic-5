@@ -3,9 +3,11 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Card, Text } from '@rneui/themed';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatEventDate, formatEventTime } from '../utils/date';
-import { colors } from '../theme/theme';
+import { useThemeColors } from '../theme/theme';
 
 export default function EventCard({ event, saved, onPress, onToggleSaved, compact = false, cardWidth }) {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
 
   async function handleSavedPress(pressEvent) {
     pressEvent.stopPropagation();
@@ -44,7 +46,7 @@ export default function EventCard({ event, saved, onPress, onToggleSaved, compac
             style={styles.heartButton}
           >
             <MaterialCommunityIcons
-              color={saved ? '#C6253D' : colors.muted}
+              color={saved ? colors.saved : colors.muted}
               name={saved ? 'heart' : 'heart-outline'}
               size={22}
             />
@@ -54,9 +56,9 @@ export default function EventCard({ event, saved, onPress, onToggleSaved, compac
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     elevation: 1,
     minHeight: 174,
     padding: 0,
@@ -76,6 +78,6 @@ const styles = StyleSheet.create({
   category: { color: colors.blueLight, fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
   heartButton: { position: 'absolute', top: 4, right: 4, alignItems: 'center', height: 48, justifyContent: 'center', width: 48 },
   title: { color: colors.ink, fontSize: 20, fontWeight: '800', marginTop: 2 },
-  date: { color: colors.blue, fontSize: 14, fontWeight: '700', marginTop: 8 },
+  date: { color: colors.primary, fontSize: 14, fontWeight: '700', marginTop: 8 },
   meta: { color: colors.muted, fontSize: 13, marginTop: 3 },
 });

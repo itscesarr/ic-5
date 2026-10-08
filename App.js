@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import {
   DarkTheme as NavigationDarkTheme,
@@ -13,7 +13,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { AppContextProvider, useAppContext } from './src/context/AppContext';
 import { initializeDatabase } from './src/db/database';
 import { restoreSession } from './src/services/session';
-import { appTheme, colors } from './src/theme/theme';
+import { appTheme, colors, darkColors } from './src/theme/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -21,23 +21,32 @@ const darkNavigationTheme = {
   ...NavigationDarkTheme,
   colors: {
     ...NavigationDarkTheme.colors,
-    primary: colors.maize,
-    background: '#101820',
-    card: '#17212B',
+    primary: darkColors.primary,
+    background: darkColors.cream,
+    card: darkColors.surface,
+    text: darkColors.ink,
+    border: darkColors.border,
   },
 };
 
 function AppContent({ initialSession }) {
-  const { preferences } = useAppContext();
+  const { preferences, layoutReady } = useAppContext();
+  const theme = useMemo(() => ({
+    ...appTheme,
+    mode: preferences.darkTheme ? 'dark' : 'light',
+  }), [preferences.darkTheme]);
+
+  if (!layoutReady) return null;
+
   return (
-    <>
+    <ThemeProvider theme={theme}>
       <StatusBar style={preferences.darkTheme ? 'light' : 'dark'} />
       <NavigationContainer
         theme={preferences.darkTheme ? darkNavigationTheme : NavigationDefaultTheme}
       >
         <AppNavigator initialSession={initialSession} />
       </NavigationContainer>
-    </>
+    </ThemeProvider>
   );
 }
 
@@ -64,11 +73,9 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider theme={appTheme}>
-        <AppContextProvider initialSession={initialSession}>
-          <AppContent initialSession={initialSession} />
-        </AppContextProvider>
-      </ThemeProvider>
+      <AppContextProvider initialSession={initialSession}>
+        <AppContent initialSession={initialSession} />
+      </AppContextProvider>
     </SafeAreaProvider>
   );
 }

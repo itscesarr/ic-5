@@ -5,9 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
 import { createSession } from '../services/session';
-import { colors } from '../theme/theme';
+import { useThemeColors } from '../theme/theme';
 
 export default function LoginScreen({ navigation }) {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
   const { setSession } = useAppContext();
   const [username, setUsername] = useState('student');
   const [password, setPassword] = useState('maize');
@@ -65,14 +67,14 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: { backgroundColor: colors.cream, flex: 1 },
   accent: { backgroundColor: colors.maize, height: 8, left: 0, position: 'absolute', right: 0, top: 0 },
   content: { flex: 1, justifyContent: 'center', paddingHorizontal: 28 },
   mark: { alignItems: 'center', backgroundColor: colors.maize, borderRadius: 18, height: 64, justifyContent: 'center', width: 64 },
-  title: { color: colors.blue, fontSize: 38, fontWeight: '900', letterSpacing: -1, marginTop: 16 },
+  title: { color: colors.primary, fontSize: 38, fontWeight: '900', letterSpacing: -1, marginTop: 16 },
   tagline: { color: colors.muted, fontSize: 17, marginTop: 3 },
-  form: { backgroundColor: '#FFFFFF', borderRadius: 18, marginTop: 32, padding: 20 },
+  form: { backgroundColor: colors.surface, borderRadius: 18, marginTop: 32, padding: 20 },
   inputContainer: { paddingHorizontal: 0 },
   input: { borderBottomColor: colors.border },
   error: { color: colors.danger, marginBottom: 12 },

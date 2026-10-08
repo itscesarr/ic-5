@@ -1,9 +1,11 @@
 import React from 'react';
 import { Alert, StyleSheet, Switch, Text, View } from 'react-native';
 import { useAppContext } from '../context/AppContext';
-import { colors } from '../theme/theme';
+import { useThemeColors } from '../theme/theme';
 
 export default function CardLayoutToggle() {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
   const { preferences, changeCardLayout, layoutReady, layoutSaving } = useAppContext();
   const disabled = !layoutReady || layoutSaving;
 
@@ -25,7 +27,7 @@ export default function CardLayoutToggle() {
           disabled={disabled}
           value={preferences.cardLayout === 'grid'}
           onValueChange={(enabled) => select(enabled ? 'grid' : 'list')}
-          trackColor={{ false: '#AAB4BE', true: colors.blue }}
+          trackColor={{ false: colors.muted, true: colors.primary }}
           thumbColor="#FFFFFF"
         />
       </View>
@@ -33,8 +35,8 @@ export default function CardLayoutToggle() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginHorizontal: 20, marginBottom: 12, marginTop: 12 },
-  label: { color: colors.blue, fontSize: 14, fontWeight: '700' },
+  label: { color: colors.primary, fontSize: 14, fontWeight: '700' },
   switchTarget: { minHeight: 48, minWidth: 48, justifyContent: 'center', alignItems: 'center' },
 });

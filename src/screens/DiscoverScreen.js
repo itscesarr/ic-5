@@ -18,11 +18,13 @@ import EmptyState from '../components/EmptyState';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { useAppContext } from '../context/AppContext';
 import { refreshEvents } from '../services/eventService';
-import { colors } from '../theme/theme';
+import { useThemeColors } from '../theme/theme';
 
 const categories = ['All', 'Academic', 'Arts', 'Career', 'Community', 'Workshop'];
 
 export default function DiscoverScreen({ navigation }) {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
   const { events, setEvents, eventsLoading, eventsError, setEventsError, reloadEvents, savedEventIds, toggleSaved, preferences } = useAppContext();
   const layout = preferences?.cardLayout || 'list';
   const { columns, cardWidth } = useCardLayout(layout);
@@ -99,7 +101,7 @@ export default function DiscoverScreen({ navigation }) {
           onChangeText={setQuery}
           placeholder="Search events"
           accessibilityLabel="Search events"
-          placeholderTextColor="#7B858E"
+          placeholderTextColor={colors.muted}
           returnKeyType="search"
           style={styles.searchInput}
           value={query}
@@ -152,7 +154,7 @@ export default function DiscoverScreen({ navigation }) {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={emptyState}
-        refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={refreshing} />}
+        refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={refreshing} tintColor={colors.primary} colors={[colors.primary]} progressBackgroundColor={colors.surface} />}
         renderItem={({ item }) => (
           <EventCard
             event={item}
@@ -173,15 +175,15 @@ export default function DiscoverScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: { backgroundColor: colors.cream, flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 12 },
   eyebrow: { color: colors.blueLight, fontSize: 11, fontWeight: '800', letterSpacing: 1.4 },
-  heading: { color: colors.blue, fontSize: 31, fontWeight: '900', letterSpacing: -0.7, marginTop: 4 },
+  heading: { color: colors.primary, fontSize: 31, fontWeight: '900', letterSpacing: -0.7, marginTop: 4 },
   subheading: { color: colors.muted, fontSize: 15, marginTop: 3 },
   searchBox: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderColor: colors.border,
     borderRadius: 13,
     borderWidth: 1,
@@ -201,7 +203,7 @@ const styles = StyleSheet.create({
   chip: {
     alignItems: 'center',
     backgroundColor: 'transparent',
-    borderColor: '#AAB4BE',
+    borderColor: colors.muted,
     borderRadius: 999,
     borderWidth: 1,
     justifyContent: 'center',
@@ -209,9 +211,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  selectedChip: { backgroundColor: colors.blue, borderColor: colors.blue },
-  chipText: { color: colors.blue, fontSize: 13, fontWeight: '700' },
-  selectedChipText: { color: '#FFFFFF' },
+  selectedChip: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { color: colors.primary, fontSize: 13, fontWeight: '700' },
+  selectedChipText: { color: colors.onPrimary },
   refreshError: { color: colors.danger, marginHorizontal: 20, marginBottom: 8 },
   filterStatus: { marginHorizontal: 20 },
   filterHint: { color: colors.muted, fontSize: 13 },

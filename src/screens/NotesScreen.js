@@ -4,9 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@rneui/themed';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getNote, saveNote } from '../db/database';
-import { colors } from '../theme/theme';
+import { useThemeColors } from '../theme/theme';
 
 export default function NotesScreen({ navigation, route }) {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
   const { eventId, eventTitle } = route.params;
   const [note, setNote] = useState('');
   const [loaded, setLoaded] = useState(false);
@@ -35,7 +37,7 @@ export default function NotesScreen({ navigation, route }) {
       >
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-            <MaterialCommunityIcons color={colors.blue} name="arrow-left" size={25} />
+            <MaterialCommunityIcons color={colors.primary} name="arrow-left" size={25} />
           </Pressable>
           <Text style={styles.headerTitle}>Private note</Text>
           <View style={styles.backButton} />
@@ -49,7 +51,7 @@ export default function NotesScreen({ navigation, route }) {
             multiline
             onChangeText={setNote}
             placeholder="What do you want to remember about this event?"
-            placeholderTextColor="#89929B"
+            placeholderTextColor={colors.muted}
             style={styles.input}
             textAlignVertical="top"
             value={note}
@@ -60,7 +62,7 @@ export default function NotesScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: { backgroundColor: colors.cream, flex: 1 },
   flex: { flex: 1 },
   header: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 7 },
@@ -68,7 +70,7 @@ const styles = StyleSheet.create({
   headerTitle: { color: colors.ink, fontSize: 16, fontWeight: '800' },
   content: { flex: 1, paddingHorizontal: 22, paddingTop: 28 },
   eyebrow: { color: colors.blueLight, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
-  eventTitle: { color: colors.blue, fontSize: 25, fontWeight: '900', lineHeight: 30, marginTop: 6 },
+  eventTitle: { color: colors.primary, fontSize: 25, fontWeight: '900', lineHeight: 30, marginTop: 6 },
   helper: { color: colors.muted, marginTop: 8 },
-  input: { backgroundColor: '#FFFFFF', borderColor: colors.border, borderRadius: 14, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, lineHeight: 24, marginTop: 22, maxHeight: 330, minHeight: 180, padding: 16 },
+  input: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 14, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, lineHeight: 24, marginTop: 22, maxHeight: 330, minHeight: 180, padding: 16 },
 });

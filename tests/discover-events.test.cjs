@@ -42,7 +42,7 @@ function screenHarness(file, context, database = {}) {
       if (name.includes('utils/cardLayout')) return { useCardLayout: () => ({ columns: 1, cardWidth: 350 }) };
       if (name.includes('utils/date')) return { formatFullEventDate: () => 'Event date' };
       if (name === '@rneui/themed') return { Text: 'Text', Button: 'Button', Chip: 'Chip' };
-      if (name.includes('theme')) return { colors: {} };
+      if (name.includes('theme')) return { useThemeColors: () => ({}) };
       if (name === 'react-native') return {
         FlatList: 'FlatList', TextInput: 'TextInput', Pressable: 'Pressable', RefreshControl: 'RefreshControl',
         View: 'View', StyleSheet: { create: (styles) => styles },
