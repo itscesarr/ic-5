@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, ListItem, Switch, Text } from '@rneui/themed';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
 import { clearSession } from '../services/session';
-import { resetPreferences, setDarkTheme } from '../storage/preferences';
+import { setDarkTheme } from '../storage/preferences';
 import { useThemeColors } from '../theme/theme';
 
 function SettingRow({ icon, title, description, value, onChange, disabled }) {
@@ -35,12 +35,13 @@ function SettingRow({ icon, title, description, value, onChange, disabled }) {
 export default function SettingsScreen({ navigation }) {
   const colors = useThemeColors();
   const styles = createStyles(colors);
-  const { preferences, setPreferences, session, setSession } = useAppContext();
+  const { preferences, setPreferences, session, setSession, resetAppData, layoutSaving } = useAppContext();
   const [message, setMessage] = useState('');
   const [themeSaving, setThemeSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   async function changeDarkTheme(value) {
-    if (themeSaving) return;
+    if (themeSaving || resetting) return;
     setThemeSaving(true);
     setMessage('');
     try {
@@ -53,7 +54,28 @@ export default function SettingsScreen({ navigation }) {
     }
   }
 
+  async function performReset() {
+    setResetting(true);
+    setMessage('');
+    try {
+      await resetAppData();
+      const rootNavigation = navigation.getParent?.() || navigation;
+      rootNavigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+    } catch {
+      setMessage('Could not reset all app data. Please try again.');
+    } finally {
+      setResetting(false);
+    }
+  }
+
   function handleReset() {
+    if (resetting || themeSaving || layoutSaving) return;
+    if (Platform.OS === 'web') {
+      if (window.confirm('Reset app data? This will clear your local MaizeMeet data and sign you out.')) {
+        return performReset();
+      }
+      return;
+    }
     Alert.alert(
       'Reset app data?',
       'This will clear your local MaizeMeet data and sign you out.',
@@ -62,11 +84,7 @@ export default function SettingsScreen({ navigation }) {
         {
           text: 'Reset',
           style: 'destructive',
-          onPress: async () => {
-            await resetPreferences();
-            setPreferences({ darkTheme: false, cardLayout: 'list' });
-            setMessage('App data reset.');
-          },
+          onPress: performReset,
         },
       ]
     );
@@ -95,7 +113,7 @@ export default function SettingsScreen({ navigation }) {
         <Text style={styles.sectionLabel}>DISPLAY</Text>
         <View style={styles.group}>
           <SettingRow
-            disabled={themeSaving}
+            disabled={themeSaving || resetting}
             description="Use a darker color palette"
             icon="weather-night"
             onChange={changeDarkTheme}
@@ -107,7 +125,8 @@ export default function SettingsScreen({ navigation }) {
         <Text style={styles.sectionLabel}>ACCOUNT & DATA</Text>
         <Button
           buttonStyle={styles.secondaryButton}
-          disabled={themeSaving}
+          disabled={themeSaving || resetting || layoutSaving}
+          loading={resetting}
           onPress={handleReset}
           title="Reset app data"
           titleStyle={styles.secondaryButtonText}
@@ -115,6 +134,7 @@ export default function SettingsScreen({ navigation }) {
         />
         <Button
           buttonStyle={styles.logoutButton}
+          disabled={resetting}
           onPress={handleLogout}
           title="Sign out"
           titleStyle={styles.logoutText}

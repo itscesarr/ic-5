@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { getEvents, getSavedEventIds, toggleSavedEvent } from '../db/database';
 import { getPreferences, setCardLayout } from '../storage/preferences';
+import { resetLocalAppData } from '../services/reset';
 
 const AppContext = createContext(null);
 
@@ -11,6 +12,7 @@ export function AppContextProvider({ children, initialSession }) {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState('');
   const savedStateQueue = useRef(Promise.resolve());
+  const resetting = useRef(false);
   const [layoutReady, setLayoutReady] = useState(false);
   const [layoutSaving, setLayoutSaving] = useState(false);
   const [preferences, setPreferences] = useState({
@@ -37,6 +39,7 @@ export function AppContextProvider({ children, initialSession }) {
   }
 
   function toggleSaved(eventId) {
+    if (resetting.current) return Promise.reject(new Error('App data is being reset.'));
     const operation = savedStateQueue.current.then(async () => {
       const isSaved = await toggleSavedEvent(eventId);
       setSavedEventIds((current) => {
@@ -50,7 +53,7 @@ export function AppContextProvider({ children, initialSession }) {
   }
 
   async function changeCardLayout(layout) {
-    if (!layoutReady || layoutSaving) return;
+    if (!layoutReady || layoutSaving || resetting.current) return;
     setLayoutSaving(true);
     try {
       await setCardLayout(layout);
@@ -60,7 +63,24 @@ export function AppContextProvider({ children, initialSession }) {
     }
   }
 
+  async function resetAppData() {
+    if (resetting.current) return;
+    resetting.current = true;
+    try {
+      await savedStateQueue.current;
+      const initialEvents = await resetLocalAppData();
+      setEvents(initialEvents);
+      setSavedEventIds([]);
+      setPreferences({ darkTheme: false, cardLayout: 'list' });
+      setEventsError('');
+      setSession(null);
+    } finally {
+      resetting.current = false;
+    }
+  }
+
   const value = {
+    resetAppData,
     session,
     setSession,
     events,
