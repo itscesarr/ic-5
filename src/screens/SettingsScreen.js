@@ -1,38 +1,81 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, ListItem, Switch, Text } from '@rneui/themed';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
 import { clearSession } from '../services/session';
-import { resetPreferences, setDarkTheme } from '../storage/preferences';
-import { colors } from '../theme/theme';
+import { setDarkTheme } from '../storage/preferences';
+import { useThemeColors } from '../theme/theme';
 
-function SettingRow({ icon, title, description, value, onChange }) {
+function SettingRow({ icon, title, description, value, onChange, disabled }) {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
   return (
     <ListItem containerStyle={styles.row}>
       <View style={styles.iconBox}>
-        <MaterialCommunityIcons color={colors.blue} name={icon} size={22} />
+        <MaterialCommunityIcons color={colors.primary} name={icon} size={22} />
       </View>
       <ListItem.Content>
         <ListItem.Title style={styles.rowTitle}>{title}</ListItem.Title>
         <ListItem.Subtitle style={styles.rowDescription}>{description}</ListItem.Subtitle>
       </ListItem.Content>
-      <Switch onValueChange={onChange} value={value} />
+      <Switch
+        accessibilityLabel={title}
+        disabled={disabled}
+        onValueChange={onChange}
+        value={value}
+        trackColor={{ false: colors.muted, true: colors.primary }}
+        thumbColor="#FFFFFF"
+      />
     </ListItem>
   );
 }
 
 export default function SettingsScreen({ navigation }) {
-  const { preferences, setPreferences, session, setSession } = useAppContext();
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
+  const { preferences, setPreferences, session, setSession, resetAppData, layoutSaving } = useAppContext();
   const [message, setMessage] = useState('');
+  const [themeSaving, setThemeSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
-  function changeDarkTheme(value) {
-    setPreferences((current) => ({ ...current, darkTheme: value }));
-    setDarkTheme(value).catch(() => setMessage('Could not save your preference.'));
+  async function changeDarkTheme(value) {
+    if (themeSaving || resetting) return;
+    setThemeSaving(true);
+    setMessage('');
+    try {
+      await setDarkTheme(value);
+      setPreferences((current) => ({ ...current, darkTheme: value }));
+    } catch {
+      setMessage('Could not save your preference.');
+    } finally {
+      setThemeSaving(false);
+    }
+  }
+
+  async function performReset() {
+    setResetting(true);
+    setMessage('');
+    try {
+      await resetAppData();
+      const rootNavigation = navigation.getParent?.() || navigation;
+      rootNavigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+    } catch {
+      setMessage('Could not reset all app data. Please try again.');
+    } finally {
+      setResetting(false);
+    }
   }
 
   function handleReset() {
+    if (resetting || themeSaving || layoutSaving) return;
+    if (Platform.OS === 'web') {
+      if (window.confirm('Reset app data? This will clear your local MaizeMeet data and sign you out.')) {
+        return performReset();
+      }
+      return;
+    }
     Alert.alert(
       'Reset app data?',
       'This will clear your local MaizeMeet data and sign you out.',
@@ -41,11 +84,7 @@ export default function SettingsScreen({ navigation }) {
         {
           text: 'Reset',
           style: 'destructive',
-          onPress: async () => {
-            await resetPreferences();
-            setPreferences({ darkTheme: false, cardLayout: 'list' });
-            setMessage('App data reset.');
-          },
+          onPress: performReset,
         },
       ]
     );
@@ -74,6 +113,7 @@ export default function SettingsScreen({ navigation }) {
         <Text style={styles.sectionLabel}>DISPLAY</Text>
         <View style={styles.group}>
           <SettingRow
+            disabled={themeSaving || resetting}
             description="Use a darker color palette"
             icon="weather-night"
             onChange={changeDarkTheme}
@@ -85,6 +125,8 @@ export default function SettingsScreen({ navigation }) {
         <Text style={styles.sectionLabel}>ACCOUNT & DATA</Text>
         <Button
           buttonStyle={styles.secondaryButton}
+          disabled={themeSaving || resetting || layoutSaving}
+          loading={resetting}
           onPress={handleReset}
           title="Reset app data"
           titleStyle={styles.secondaryButtonText}
@@ -92,6 +134,7 @@ export default function SettingsScreen({ navigation }) {
         />
         <Button
           buttonStyle={styles.logoutButton}
+          disabled={resetting}
           onPress={handleLogout}
           title="Sign out"
           titleStyle={styles.logoutText}
@@ -104,24 +147,24 @@ export default function SettingsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: { backgroundColor: colors.cream, flex: 1 },
   content: { padding: 20 },
-  heading: { color: colors.blue, fontSize: 30, fontWeight: '900', letterSpacing: -0.5 },
-  profile: { alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, flexDirection: 'row', marginTop: 18, padding: 17 },
+  heading: { color: colors.primary, fontSize: 30, fontWeight: '900', letterSpacing: -0.5 },
+  profile: { alignItems: 'center', backgroundColor: colors.surface, borderRadius: 16, flexDirection: 'row', marginTop: 18, padding: 17 },
   avatar: { alignItems: 'center', backgroundColor: colors.maize, borderRadius: 24, height: 48, justifyContent: 'center', marginRight: 13, width: 48 },
   avatarText: { color: colors.blue, fontSize: 20, fontWeight: '900' },
   profileName: { color: colors.ink, fontSize: 16, fontWeight: '800' },
   profileLabel: { color: colors.muted, fontSize: 13, marginTop: 2 },
   sectionLabel: { color: colors.blueLight, fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginBottom: 8, marginTop: 25 },
   group: { borderRadius: 14, overflow: 'hidden' },
-  row: { minHeight: 78, paddingHorizontal: 15 },
-  iconBox: { alignItems: 'center', backgroundColor: '#EDF1F4', borderRadius: 9, height: 38, justifyContent: 'center', width: 38 },
+  row: { backgroundColor: colors.surface, minHeight: 78, paddingHorizontal: 15 },
+  iconBox: { alignItems: 'center', backgroundColor: colors.subtle, borderRadius: 9, height: 38, justifyContent: 'center', width: 38 },
   rowTitle: { color: colors.ink, fontSize: 15, fontWeight: '700' },
   rowDescription: { color: colors.muted, fontSize: 12, marginTop: 3 },
   divider: { backgroundColor: colors.border, height: 1, marginLeft: 68 },
-  secondaryButton: { borderColor: colors.blue, borderRadius: 10, marginTop: 2 },
-  secondaryButtonText: { color: colors.blue },
+  secondaryButton: { borderColor: colors.primary, borderRadius: 10, marginTop: 2 },
+  secondaryButtonText: { color: colors.primary },
   logoutButton: { marginTop: 10 },
   logoutText: { color: colors.danger },
   message: { color: colors.blueLight, marginTop: 10, textAlign: 'center' },

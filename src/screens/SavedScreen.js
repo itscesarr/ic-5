@@ -8,9 +8,11 @@ import { useCardLayout } from '../utils/cardLayout';
 import EmptyState from '../components/EmptyState';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { useAppContext } from '../context/AppContext';
-import { colors } from '../theme/theme';
+import { useThemeColors } from '../theme/theme';
 
 export default function SavedScreen({ navigation }) {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
   const { events, eventsLoading, savedEventIds, toggleSaved, preferences } = useAppContext();
   const layout = preferences?.cardLayout || 'list';
   const { columns, cardWidth } = useCardLayout(layout);
@@ -58,10 +60,10 @@ export default function SavedScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: { backgroundColor: colors.cream, flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 16 },
-  heading: { color: colors.blue, fontSize: 30, fontWeight: '900', letterSpacing: -0.5 },
+  heading: { color: colors.primary, fontSize: 30, fontWeight: '900', letterSpacing: -0.5 },
   subheading: { color: colors.muted, marginTop: 3 },
   list: { paddingBottom: 28, paddingHorizontal: 20, paddingTop: 18 },
   emptyList: { flexGrow: 1 },

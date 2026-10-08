@@ -1,15 +1,15 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const DARK_KEY = 'preferences.darkTheme';
-const LAYOUT_KEY = 'preferences.cardLayout';
+const DARK_KEY = "preferences.darkTheme";
+const LAYOUT_KEY = "preferences.cardLayout";
 
 export async function getPreferences() {
   const storedTheme = await AsyncStorage.getItem(DARK_KEY);
   const storedLayout = await AsyncStorage.getItem(LAYOUT_KEY);
 
   return {
-    darkTheme: storedTheme === null ? false : Boolean(storedTheme),
-    cardLayout: storedLayout === 'grid' ? 'grid' : 'list',
+    darkTheme: storedTheme === "true",
+    cardLayout: storedLayout === "grid" ? "grid" : "list",
   };
 }
 
@@ -22,5 +22,5 @@ export function setDarkTheme(value) {
 }
 
 export function resetPreferences() {
-  return AsyncStorage.clear();
+  return AsyncStorage.multiRemove([DARK_KEY, LAYOUT_KEY]);
 }

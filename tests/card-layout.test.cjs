@@ -31,6 +31,25 @@ test('layout survives reloading preferences and defaults safely for old or inval
   assert.equal((await restarted.getPreferences()).cardLayout, 'list');
 });
 
+test('dark theme stays off after disabling and restarting, with safe defaults', async () => {
+  const data = new Map();
+  const dependencies = { '@react-native-async-storage/async-storage': {
+    getItem: async (key) => data.get(key) ?? null,
+    setItem: async (key, value) => { data.set(key, value); },
+  } };
+  const preferences = load('src/storage/preferences.js', dependencies);
+  assert.equal((await preferences.getPreferences()).darkTheme, false);
+  await preferences.setDarkTheme(true);
+  assert.equal((await load('src/storage/preferences.js', dependencies).getPreferences()).darkTheme, true);
+  await preferences.setDarkTheme(false);
+  assert.equal(data.get('preferences.darkTheme'), 'false');
+  assert.equal((await load('src/storage/preferences.js', dependencies).getPreferences()).darkTheme, false);
+  for (const invalid of ['', 'invalid', '0']) {
+    data.set('preferences.darkTheme', invalid);
+    assert.equal((await preferences.getPreferences()).darkTheme, false);
+  }
+});
+
 test('grid adapts to narrow screens and large text without changing the selected preference', () => {
   const { getCardLayout } = load('src/utils/cardLayout.js', { 'react-native': {} });
   assert.equal(getCardLayout('grid', 390, 1).columns, 2);

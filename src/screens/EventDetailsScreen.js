@@ -8,9 +8,11 @@ import LoadingOverlay from '../components/LoadingOverlay';
 import { useAppContext } from '../context/AppContext';
 import { getEvent, isRegistered, registerForEvent } from '../db/database';
 import { formatFullEventDate } from '../utils/date';
-import { colors } from '../theme/theme';
+import { useThemeColors } from '../theme/theme';
 
 export default function EventDetailsScreen({ navigation, route }) {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
   const { savedEventIds, toggleSaved } = useAppContext();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -85,11 +87,11 @@ export default function EventDetailsScreen({ navigation, route }) {
           }
           style={styles.navButton}
         >
-          <MaterialCommunityIcons color={colors.blue} name="arrow-left" size={25} />
+          <MaterialCommunityIcons color={colors.primary} name="arrow-left" size={25} />
         </Pressable>
         <Pressable onPress={handleSave} style={styles.navButton}>
           <MaterialCommunityIcons
-            color={saved ? '#C6253D' : colors.blue}
+            color={saved ? colors.saved : colors.primary}
             name={saved ? 'heart' : 'heart-outline'}
             size={25}
           />
@@ -138,7 +140,7 @@ export default function EventDetailsScreen({ navigation, route }) {
           style={styles.noteCard}
         >
           <View style={styles.noteIcon}>
-            <MaterialCommunityIcons color={colors.blue} name="notebook-edit-outline" size={24} />
+            <MaterialCommunityIcons color={colors.primary} name="notebook-edit-outline" size={24} />
           </View>
           <View style={styles.noteCopy}>
             <Text style={styles.noteTitle}>Private note</Text>
@@ -164,14 +166,14 @@ export default function EventDetailsScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { backgroundColor: '#FFFFFF', flex: 1 },
-  center: { alignItems: 'center', flex: 1, justifyContent: 'center' },
+const createStyles = (colors) => StyleSheet.create({
+  safeArea: { backgroundColor: colors.surface, flex: 1 },
+  center: { backgroundColor: colors.cream, alignItems: 'center', flex: 1, justifyContent: 'center' },
   navBar: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 4 },
   navButton: { alignItems: 'center', height: 38, justifyContent: 'center', width: 38 },
   content: { paddingBottom: 28, paddingHorizontal: 22 },
   category: { color: colors.blueLight, fontSize: 12, fontWeight: '800', letterSpacing: 1.3, marginTop: 14 },
-  title: { color: colors.blue, fontSize: 34, fontWeight: '900', letterSpacing: -0.8, lineHeight: 39, marginTop: 7 },
+  title: { color: colors.primary, fontSize: 34, fontWeight: '900', letterSpacing: -0.8, lineHeight: 39, marginTop: 7 },
   date: { color: colors.blueLight, fontSize: 16, fontWeight: '700', marginTop: 14 },
   locationRow: { alignItems: 'flex-start', flexDirection: 'row', marginTop: 18 },
   locationText: { marginLeft: 8 },
@@ -181,12 +183,12 @@ const styles = StyleSheet.create({
   capacityText: { color: colors.muted, fontSize: 13 },
   rule: { backgroundColor: colors.border, height: 1, marginVertical: 24 },
   sectionTitle: { color: colors.ink, fontSize: 18, fontWeight: '800' },
-  description: { color: '#3E4A55', fontSize: 16, lineHeight: 25, marginTop: 9 },
+  description: { color: colors.body, fontSize: 16, lineHeight: 25, marginTop: 9 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 17 },
   tag: { borderColor: colors.border, borderRadius: 999 },
   tagText: { color: colors.blueLight, fontSize: 12 },
   noteCard: { alignItems: 'center', backgroundColor: colors.cream, borderRadius: 14, flexDirection: 'row', marginTop: 26, padding: 15 },
-  noteIcon: { alignItems: 'center', backgroundColor: '#E5EDF4', borderRadius: 10, height: 42, justifyContent: 'center', width: 42 },
+  noteIcon: { alignItems: 'center', backgroundColor: colors.subtle, borderRadius: 10, height: 42, justifyContent: 'center', width: 42 },
   noteCopy: { flex: 1, marginHorizontal: 12 },
   noteTitle: { color: colors.ink, fontSize: 15, fontWeight: '800' },
   noteDescription: { color: colors.muted, fontSize: 12, marginTop: 2 },

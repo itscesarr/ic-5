@@ -9,7 +9,7 @@ import NotesScreen from '../screens/NotesScreen';
 import SavedScreen from '../screens/SavedScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { useAppContext } from '../context/AppContext';
-import { colors } from '../theme/theme';
+import { useThemeColors } from '../theme/theme';
 
 const RootStack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
@@ -21,6 +21,7 @@ const icons = {
 };
 
 function MainTabs() {
+  const colors = useThemeColors();
   const { savedEventIds } = useAppContext();
   const [savedCount] = useState(savedEventIds.length);
 
@@ -28,10 +29,10 @@ function MainTabs() {
     <Tabs.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.blue,
-        tabBarInactiveTintColor: '#77838E',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.muted,
         tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
-        tabBarStyle: { borderTopColor: '#E2E6EA', height: 82, paddingBottom: 22, paddingTop: 8 },
+        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border, height: 82, paddingBottom: 22, paddingTop: 8 },
         tabBarIcon: ({ color, focused, size }) => (
           <MaterialCommunityIcons
             color={color}
